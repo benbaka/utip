@@ -1,4 +1,10 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:utip/widgets/person_counter.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -11,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'UTip',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -31,13 +37,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const UTip(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class UTip extends StatefulWidget {
+  const UTip({super.key, required this.title});
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -51,11 +57,22 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<UTip> createState() => _UTipState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _UTipState extends State<UTip> {
+  int _counter = 1;
+  var _tipPercentage = 0.0;
+  double _billTotal = 0;
+
+
+  void setBillAmountActionCallBack(String value){
+    setState(() {
+      _billTotal = double.parse(value);
+    });
+
+  }
+
 
   void _incrementCounter() {
     setState(() {
@@ -68,6 +85,33 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+
+
+  double _calculateFullBill(){
+    //return  ( (_billTotal) + (_billTotal*(_tipPercentage ))/_counter) ?? 0;
+    double percentageAgainstTotalBill = _getTipAmount();
+    return  ( (_billTotal + percentageAgainstTotalBill)/(_counter.toDouble())) ?? 0.0;
+  }
+
+  double _getTipAmount() {
+    var percentageAgainstTotalBill = (_tipPercentage) * _billTotal;
+    return percentageAgainstTotalBill;
+  }
+
+  void _decrementCounter() {
+    setState(() {
+      // This call to setState tells the Flutter framework that something has
+      // changed in this State, which causes it to rerun the build method below
+      // so that the display can reflect the updated values. If we changed
+      // _counter without calling setState(), then the build method would not be
+      // called again, and so nothing would appear to happen.
+      if (_counter > 1) {
+      _counter--;
+      }
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -76,44 +120,87 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+    var theme = Theme.of(context);
+    final style = theme.textTheme.titleMedium!.copyWith(
+      color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold
+    );
+    double overallTotal = _calculateFullBill();
+    double totalTip = _getTipAmount();
+
+
     return Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
         // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
+        //backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the UTip object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('UTip'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+                padding: EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.inversePrimary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "Total per Person",
+                      style: style,
+                    ),
+                    Text(overallTotal.toStringAsFixed(2),
+                    style: style.copyWith(
+                      color: theme.colorScheme.onPrimary,
+                      fontSize: theme.textTheme.displaySmall?.fontSize
+                    ),
+
+                    )
+
+                  ],
+                )),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: theme.colorScheme.primary,
+                  width: 2
+                )
+              ),
+              child:  Column(
+              children: [
+                BillAmountField(setBillAmountActionCallBack: setBillAmountActionCallBack),
+                PersonCounter(theme: theme, counter: _counter, onDecrement: _decrementCounter , onIncrement: _incrementCounter,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Tip",
+                    style: theme.textTheme.titleMedium
+                    ),
+                    Text("\$ ${totalTip.toStringAsFixed(2)}",
+                    style: theme.textTheme.titleMedium)
+                  ],
+                ),
+                // slider text
+                Text("${(_tipPercentage * 100).round()} %"),
+                TipSlider(tipPercentage: _tipPercentage, onChanged: (double value) { setState(() {
+                  _tipPercentage = value;
+                });  }, )
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
             ),
-          ],
-        ),
+          )
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
@@ -123,3 +210,50 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+class BillAmountField extends StatelessWidget {
+  const BillAmountField({
+    super.key,
+    required this.setBillAmountActionCallBack,
+  });
+
+  final ValueChanged<String> setBillAmountActionCallBack;
+
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.attach_money),
+        labelText: "Bill Amount"),
+        keyboardType: TextInputType.number,
+        inputFormatters:  [FilteringTextInputFormatter.digitsOnly] ,
+      onChanged: setBillAmountActionCallBack,
+      );
+  }
+}
+
+class TipSlider extends StatelessWidget {
+  const TipSlider({
+    super.key,
+    required double tipPercentage,
+    required this.onChanged,
+  }) : _tipPercentage = tipPercentage;
+
+  final double _tipPercentage;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Slider(min: 0.0,
+        max: 0.50,
+        divisions: 50,
+        label: "${(_tipPercentage * 100).round()}",
+        value: _tipPercentage,
+        onChanged: onChanged
+
+    );
+  }
+}
+
