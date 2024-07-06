@@ -3,11 +3,14 @@ import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
+import 'package:utip/providers/TipCalculatorModel.dart';
 import 'package:utip/widgets/person_counter.dart';
 
 
 void main() {
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider(create: ( context) => Tipcalculatormodel(),
+  child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -119,8 +122,10 @@ class _UTipState extends State<UTip> {
     //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    // than having to individually change instances of widgets.fff
     var theme = Theme.of(context);
+    final model = Provider.of<Tipcalculatormodel>(context);
+
     final style = theme.textTheme.titleMedium!.copyWith(
       color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold
     );
@@ -155,7 +160,7 @@ class _UTipState extends State<UTip> {
                       "Total per Person",
                       style: style,
                     ),
-                    Text(overallTotal.toStringAsFixed(2),
+                    Text(model.totalPerPerson.toStringAsFixed(2),
                     style: style.copyWith(
                       color: theme.colorScheme.onPrimary,
                       fontSize: theme.textTheme.displaySmall?.fontSize
@@ -179,23 +184,34 @@ class _UTipState extends State<UTip> {
               ),
               child:  Column(
               children: [
-                BillAmountField(setBillAmountActionCallBack: setBillAmountActionCallBack),
-                PersonCounter(theme: theme, counter: _counter, onDecrement: _decrementCounter , onIncrement: _incrementCounter,),
+                BillAmountField(setBillAmountActionCallBack: (value) {
+                  model.updateBillTotal(double.parse(value));
+                }),
+                PersonCounter(theme: theme, counter: model.personCount,
+                  onDecrement: () {
+                    if(model.personCount > 1){
+                      model.updatePersonCount(model.personCount-1);
+                    }
+                  } ,
+                  onIncrement: () {
+                  model.updatePersonCount(model.personCount + 1 );
+                  }
+                  ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text("Tip",
                     style: theme.textTheme.titleMedium
                     ),
-                    Text("\$ ${totalTip.toStringAsFixed(2)}",
+                    Text("\$ ${ (model.tipPercentage * 100 ).toStringAsFixed(2)}",
                     style: theme.textTheme.titleMedium)
                   ],
                 ),
                 // slider text
-                Text("${(_tipPercentage * 100).round()} %"),
-                TipSlider(tipPercentage: _tipPercentage, onChanged: (double value) { setState(() {
-                  _tipPercentage = value;
-                });  }, )
+                Text("${(model.tipPercentage * 100).round()} %"),
+                TipSlider(tipPercentage: model.tipPercentage, onChanged: (double value) {
+                  model.updateTipPercentage(value);
+                  }, )
               ],
             ),
             ),
