@@ -4,13 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
+import 'package:utip/providers/ThemeSelectorModel.dart';
 import 'package:utip/providers/TipCalculatorModel.dart';
 import 'package:utip/widgets/person_counter.dart';
 
 
 void main() {
-  runApp(ChangeNotifierProvider(create: ( context) => Tipcalculatormodel(),
-  child: const MyApp()));
+  runApp(
+
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: ( context) => Tipcalculatormodel() ),
+          ChangeNotifierProvider(create: (context) => ThemeSelectorModel() )
+
+        ],
+          child: const MyApp()),
+      );
 }
 
 class MyApp extends StatelessWidget {
@@ -19,27 +28,32 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+
+    final themeToggle = Provider.of<ThemeSelectorModel>(context);
+
     return MaterialApp(
       title: 'UTip',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      //darkTheme: ThemeData.dark(),
+      theme: themeToggle.themeData,
+      // theme: ThemeData(
+      //   // This is the theme of your application.
+      //   //
+      //   // TRY THIS: Try running your application with "flutter run". You'll see
+      //   // the application has a purple toolbar. Then, without quitting the app,
+      //   // try changing the seedColor in the colorScheme below to Colors.green
+      //   // and then invoke "hot reload" (save your changes or press the "hot
+      //   // reload" button in a Flutter-supported IDE, or press "r" if you used
+      //   // the command line to start the app).
+      //   //
+      //   // Notice that the counter didn't reset back to zero; the application
+      //   // state is not lost during the reload. To reset the state, use hot
+      //   // restart instead.
+      //   //
+      //   // This works for code too, not just values: Most code changes can be
+      //   // tested with just a hot reload.
+      //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      //   useMaterial3: true,
+      // ),
       home: const UTip(title: 'Flutter Demo Home Page'),
     );
   }
@@ -125,6 +139,7 @@ class _UTipState extends State<UTip> {
     // than having to individually change instances of widgets.fff
     var theme = Theme.of(context);
     final model = Provider.of<Tipcalculatormodel>(context);
+    final themeToggle = Provider.of<ThemeSelectorModel>(context);
 
     final style = theme.textTheme.titleMedium!.copyWith(
       color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold
@@ -146,6 +161,10 @@ class _UTipState extends State<UTip> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+           Checkbox(value: themeToggle.selectedThemeGlobal  , onChanged: (value) => {
+            themeToggle.setToggleTheme()
+          }),
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
